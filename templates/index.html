@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ToDo List</title>
+    <script>
+        function fetchTasks() {
+            fetch('/api/tasks')
+            .then(response => response.json())
+            .then(data => {
+                let tasksList = document.getElementById('tasks');
+                tasksList.innerHTML = '';
+                for (let key in data) {
+                    let task = data[key];
+                    tasksList.innerHTML += `
+                        <li>
+                            ${task.title} - ${task.description} [Author: ${task.author}, Done: ${task.done.toString().toLowerCase()}]
+                            <button onclick="markTaskDone(${key})">Mark as Done</button>
+                            <button onclick="deleteTask(${key})">Delete</button>
+                        </li>`;
+                }
+            });
+        }
+
+        function addTask() {
+            let title = document.getElementById('title').value;
+            let description = document.getElementById('description').value;
+            let author = document.getElementById('author').value;
+            let task = {title, description, author};
+
+            fetch('/api/tasks', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(task)
+            })
+            .then(response => response.json())
+            .then(data => {
+                fetchTasks();
+                document.getElementById('title').value = '';
+                document.getElementById('description').value = '';
+                document.getElementById('author').value = '';
+            });
+        }
+
+        function markTaskDone(taskId) {
+            fetch(`/api/tasks/${taskId}/done`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                fetchTasks();
+            });
+        }
+
+        function deleteTask(taskId) {
+            fetch(`/api/tasks/${taskId}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.status === 204) {
+                    fetchTasks();
+                }
+            });
+        }
+    </script>
+</head>
+<body onload="fetchTasks()">
+    <h1>ToDo List</h1>
+    <ul id="tasks"></ul>
+    <h2>Add New Task</h2>
+    <form onsubmit="event.preventDefault(); addTask();">
+        <label for="title">Title:</label><br>
+        <input type="text" id="title" name="title"><br>
+        <label for="description">Description:</label><br>
+        <input type="text" id="description" name="description"><br>
+        <label for="author">Author:</label><br>
+        <input type="text" id="author" name="author"><br><br>
+        <input type="submit" value="Add Task">
+    </form>
+</body>
+</html>
+
+
